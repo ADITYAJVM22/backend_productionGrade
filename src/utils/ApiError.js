@@ -1,3 +1,4 @@
+// ApiError inherits from Error, so it acts like an error but can have custom data.
 class ApiError extends Error{
     constructor(
         statusCode,
