@@ -7,6 +7,7 @@ cloudinary.config({
     api_key: process.env.CLOUDINARY_API_KEY, 
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
+//first we will save it temnearily in loaclServer and then send it to the could and delete
 const uploadOnCloudinary=async (localFilePath)=>{
     try {
         if(!localFilePath) return null;

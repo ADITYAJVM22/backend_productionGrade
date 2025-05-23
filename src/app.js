@@ -20,4 +20,14 @@ app.use(express.static("public"))
 
 // for the cookies
 app.use(cookieParser())
+
+
+//routes
+
+import userRouter from "./routes/user.routes.js"
+
+//declaration
+app.use("/api/v1/user",userRouter)
+// will redirect to http://localhost:8000/api/v1/user and will add as prefix and gives acces to further routes
+
 export {app}
