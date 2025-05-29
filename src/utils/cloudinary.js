@@ -10,7 +10,10 @@ cloudinary.config({
 //first we will save it temnearily in loaclServer and then send it to the could and delete
 const uploadOnCloudinary=async (localFilePath)=>{
     try {
-        if(!localFilePath) return null;
+        if(!localFilePath){
+            console.log("No local path provided");
+            return null;
+        } 
         //upload the file
         const response=await cloudinary.uploader.upload(localFilePath,{
             resource_type:"auto"
@@ -20,6 +23,7 @@ const uploadOnCloudinary=async (localFilePath)=>{
         })
         // file has been uploaded
         console.log("File uploaded successfully on cloudinary",response.url);
+        fs.unlinkSync(localFilePath)
         return response
     } catch (error) {
         // remove the locally saved temp file as upload opperation gotr failed

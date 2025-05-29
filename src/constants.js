@@ -1,1 +1,1 @@
-export const DB_NAME="videostore"
+export const DB_NAME="data"

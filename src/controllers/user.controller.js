@@ -16,7 +16,7 @@ const registerUser=asyncHandler(async (req,res)=>{
     // return response
 
     // getting data from form or json format
-    const {fullName,email, username,password}=req.body();
+    const {fullName,email, username,password}=req.body;
 
     // validating if empty or not
     // classic method can be to have 4 if statements and 'if' anyone is empty then throw error but we can use .some method of an array in js
@@ -25,7 +25,7 @@ const registerUser=asyncHandler(async (req,res)=>{
     }
 
     // check if already exits
-    const existedUser=User.findOne({
+    const existedUser=await User.findOne({
         $or:[{username},{email}]
     })
     if(existedUser){
