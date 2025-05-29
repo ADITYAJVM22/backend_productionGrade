@@ -52,7 +52,7 @@ const userSchema=new Schema(
 userSchema.pre("save",async function(next){
     if(!this.isModified("password")) return next();//only encrypting when user has modified or 1st time saved the password else nothing
 
-    this.password=bcrypt.hash(this.password,10); //10 rounds of hashing
+    this.password= await bcrypt.hash(this.password,10); //10 rounds of hashing
     next();
 })
 // matching the password by the encrpted one if the same
