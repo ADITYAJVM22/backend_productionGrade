@@ -3,6 +3,7 @@ import {ApiError} from "../utils/ApiError.js"
 import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import { deleteLocalFiles } from "../utils/deleteLocalFiles.js";
 
 const registerUser=asyncHandler(async (req,res)=>{
     // get user detail fdrom frontend
@@ -24,13 +25,14 @@ const registerUser=asyncHandler(async (req,res)=>{
         throw new ApiError(400,"All fields are required")
     }
 
-    // check if already exits
-    const existedUser=await User.findOne({
-        $or:[{username},{email}]
-    })
-    if(existedUser){
-        throw new ApiError(409,"user already exists")
-    }
+    // // check if already exits
+    // const existedUser=await User.findOne({
+    //     $or:[{username},{email}]
+    // })
+    // if(existedUser){
+    //     deleteLocalFiles([])
+    //     throw new ApiError(409,"user already exists")
+    // }
 
     // check for files from multer, it gives more props to req like .files
     const avatarLocalPath=req.files?.avatar[0]?.path;
@@ -44,6 +46,15 @@ const registerUser=asyncHandler(async (req,res)=>{
 
     if(!avatarLocalPath){
         throw new ApiError(400,"Avatar is required")
+    }
+
+    // check if already exits and then delet the files too
+    const existedUser=await User.findOne({
+        $or:[{username},{email}]
+    })
+    if(existedUser){
+        deleteLocalFiles([avatarLocalPath,coverImageLocalPath])
+        throw new ApiError(409,"user already exists")
     }
 
     // upload to cloudinary
