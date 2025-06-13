@@ -5,6 +5,23 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { deleteLocalFiles } from "../utils/deleteLocalFiles.js";
 
+const generateRefreshAndAccessToken=async(userId)=>{
+    try {
+        const user=await User.findById(userId)
+        const refreshToken=user.generateRefreshToken()
+        const accessToken=user.generateAccessToken()
+        // add refresh token to data base aswell do no need to relogin again
+        user.refreshToken=refreshToken
+        //SAVING can give error as password is not passed here
+        await user.save({validateBeforeSave:false})
+
+        return {accessToken,refreshToken}
+    } catch (error) {
+        throw new ApiError(500,"Something went wrong")
+    }
+}
+
+
 const registerUser=asyncHandler(async (req,res)=>{
     // get user detail fdrom frontend
     // validation - not empty
@@ -88,4 +105,100 @@ const registerUser=asyncHandler(async (req,res)=>{
     )
 })
 
-export {registerUser}
+const loginUser=asyncHandler(async (req,res)=>{
+    // req.body->data extract
+    // username or email based login
+    // find user if not found give the message and return
+    // check the password
+    // access and refresh token
+    // send cookie
+
+    const {email,username,password}=req.body
+
+    if(!username && !email){
+        throw new ApiError(400,"Email or username is required")
+    }
+    const user= await User.findOne({
+        $or:[{username},{email}]
+    })
+    if(!user){
+        throw new ApiError(404,"User not found")
+    }
+
+    const isPasswordVaild=await user.isPasswordCorrect(password)
+    if(!isPasswordVaild){
+        throw new ApiError(401,"Wrong password")
+    }
+    const {accessToken,refreshToken}=await generateRefreshAndAccessToken(user._id)
+    // We call the function after finding the user from our databasein above lines so it is not having any token so either recallthe query for database or update the object like:
+    // Save refreshToken
+    // user.refreshToken = refreshToken;
+    // await user.save();
+
+    // // Convert to plain object
+    // const loggedUser = user.toObject();
+
+    // // Manually remove sensitive fields
+    // delete loggedUser.password;
+    // delete loggedUser.refreshToken;
+
+    // // Return response
+    // return {
+    //     user: loggedUser,
+    //     accessToken,
+    //     refreshToken
+    // };  or else just requery:
+
+    const loggedUser=await User.findById(user._id).select("-passsword -refreshToken") //password won't be sent back
+
+    //sending cookies
+    const options={
+        httpOnly:true,
+        secure:true
+    }
+
+    return res
+    .status(200)
+    .cookie("accessToken",accessToken,options)
+    .cookie("refreshToken",refreshToken,options)
+    .json(
+        new ApiResponse(
+            200,
+            {
+                user:loggedUser,accessToken,refreshToken
+            },
+            "User logged in successfully"
+        )
+    )
+
+})
+const logoutUser=asyncHandler(async(req,res)=>{
+    // The user was logged inso he had an access spoken we verified itand added it to the request body via the middleware thus we can access it here.
+    await User.findByIdAndUpdate(req.user._id,
+        {
+            $set:{
+                refreshToken:undefined
+            }
+        },
+        {
+            new:true
+        }
+    )
+
+    const options={
+        httpOnly:true,
+        secure:true
+    }
+
+    return res
+    .status(200)
+    .clearCookie("accessToken",options)
+    .clearCookie("refreshToken",options)
+    .json(new ApiResponse(
+        200,
+        {},
+        "User logged out successfully"
+    ))
+})
+
+export {registerUser,loginUser,logoutUser}
