@@ -8,14 +8,14 @@ import { deleteLocalFiles } from "../utils/deleteLocalFiles.js";
 const generateRefreshAndAccessToken=async(userId)=>{
     try {
         const user=await User.findById(userId)
-        const refreshToken=user.generateRefreshToken()
-        const accessToken=user.generateAccessToken()
+        const accessToken = await user.generateAccessToken()
+        const refreshToken = await user.generateRefreshToken()
         // add refresh token to data base aswell do no need to relogin again
         user.refreshToken=refreshToken
         //SAVING can give error as password is not passed here
-        await user.save({validateBeforeSave:false})
+        await user.save({ validateBeforeSave: false })
 
-        return {accessToken,refreshToken}
+        return {accessToken, refreshToken}
     } catch (error) {
         throw new ApiError(500,"Something went wrong")
     }
@@ -149,7 +149,7 @@ const loginUser=asyncHandler(async (req,res)=>{
     //     refreshToken
     // };  or else just requery:
 
-    const loggedUser=await User.findById(user._id).select("-passsword -refreshToken") //password won't be sent back
+    const loggedUser=await User.findById(user._id).select("-password -refreshToken") //password won't be sent back
 
     //sending cookies
     const options={
@@ -173,11 +173,11 @@ const loginUser=asyncHandler(async (req,res)=>{
 
 })
 const logoutUser=asyncHandler(async(req,res)=>{
-    // The user was logged inso he had an access spoken we verified itand added it to the request body via the middleware thus we can access it here.
+    // The user was logged inso he had an access token we verified itand added it to the request body via the middleware thus we can access it here.
     await User.findByIdAndUpdate(req.user._id,
         {
-            $set:{
-                refreshToken:undefined
+            $unset:{
+                refreshToken:1 // this removes the field from document
             }
         },
         {
