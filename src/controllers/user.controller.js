@@ -352,6 +352,77 @@ const updateUserCoverImage=asyncHandler(async(req,res)=>{
     ))
 
 })
+
+const getUserChannelProfile=asyncHandler(async(req,res)=>{
+    const {username}=req.params //via the url
+    if(!username?.trim()){
+        throw new ApiError(400,"username is missing")
+    }
+    // aggregate pipeline, advance concept like sde2 sde3
+    const channel=await User.aggregate([
+        {
+            $match:{
+                username:username?.toLowerCase()
+            }
+        },{
+            // couuting docs where the channel is present to have all subscribers count
+            $lookup:{
+                from:"subscriptions",
+                localField:"_id",
+                foreignField:"channel",
+                as:"subscribers"
+            }
+        },
+        {
+            // couuting docs where the subscriber is present to have all subscribed channel count
+            $lookup:{
+                from:"subscriptions",
+                localField:"_id",
+                foreignField:"subscriber",
+                as:"subscribedTo"
+            }
+        },{
+            // adding filed in our user model via another pipeline
+            $addFields:{
+                subscribersCount:{
+                    $size:"$subscribers"
+                },
+                channelsSubscribedToCount:{
+                    $size:"$subscribedTo"
+                },
+                isSubscribed:{
+                    $cond:{
+                        if:{$in:[req.user?._id,"$subscribers.subscriber"]},
+                        then:true,
+                        else:false
+                    }
+                }
+            }
+        },{
+            // not projecting all data but selected ones like only ging fullname,username etc
+            $project:{
+                fullName:1,
+                username:1,
+                subscribersCount:1,
+                channelsSubscribedToCount:1,
+                isSubscribed:1,
+                avatar:1,
+                coverImageL:1,
+                email:1
+            }
+        }
+    ])
+    // console.log(channel) //check
+    if(!channel?.length){
+        throw new ApiError(400,"No channel found")
+    }
+    return res.status(200)
+    .json(new ApiResponse(
+        200,
+        channel[0],
+        "User channel fetched successfully"
+    ))
+})
 export {registerUser,loginUser,logoutUser,refreshAccessToken,changePassword,getCurrentUser,updateProfileDetails,updateUserAvatar,
-    updateUserCoverImage
+    updateUserCoverImage,getUserChannelProfile
 }
