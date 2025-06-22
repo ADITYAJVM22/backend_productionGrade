@@ -289,7 +289,7 @@ const updateProfileDetails=asyncHandler(async(req,res)=>{
 const updateUserAvatar=asyncHandler(async(req,res)=>{
     const avatarLocalPath=req.file?.path
     if(!avatarLocalPath){
-        throw new ApiError(401,"No image found")
+        throw new ApiError(400,"No image found")
     }
     const avatar=await uploadOnCloudinary(avatarLocalPath)
     if(!avatar){
@@ -306,7 +306,12 @@ const updateUserAvatar=asyncHandler(async(req,res)=>{
             new:true
         }
     ).select("-password")
-
+    try {
+        deleteLocalFiles([avatarLocalPath])
+    } catch (error) {
+        throw new ApiError(400,"Problem while deleting locally after uploading")
+        
+    }
     return res
     .status(200)
     .json(new ApiResponse(
