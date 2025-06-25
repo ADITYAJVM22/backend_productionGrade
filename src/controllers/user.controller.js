@@ -342,7 +342,12 @@ const updateUserCoverImage=asyncHandler(async(req,res)=>{
             new:true
         }
     ).select("-password")
-    
+     try {
+        deleteLocalFiles([coverImageLocalPath])
+    } catch (error) {
+        throw new ApiError(400,"Problem while deleting coverImage locally after uploading")
+        
+    }
     return res
     .status(200)
     .json(new ApiResponse(
@@ -422,6 +427,10 @@ const getUserChannelProfile=asyncHandler(async(req,res)=>{
         channel[0],
         "User channel fetched successfully"
     ))
+})
+
+const getWatchHistory=asyncHandler(async(req,res)=>{
+
 })
 export {registerUser,loginUser,logoutUser,refreshAccessToken,changePassword,getCurrentUser,updateProfileDetails,updateUserAvatar,
     updateUserCoverImage,getUserChannelProfile
